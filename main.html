@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Affiliate Link Processor Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+        .loader {
+            border-top-color: #3498db;
+            animation: spinner 1.5s linear infinite;
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-300 to-white min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto glassmorphism rounded-2xl shadow-2xl overflow-hidden opacity-0" id="mainContainer">
+        <div class="bg-white bg-opacity-30 py-8 px-8 border-b border-white border-opacity-20">
+            <h1 class="text-5xl font-bold text-blue-800 text-center">
+                Affiliate Link Processor
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600">Pro</span>
+            </h1>
+            <div class="flex justify-center mt-4">
+                <i class="fas fa-link text-4xl text-blue-600 animate-float"></i>
+            </div>
+        </div>
+        <div class="p-8">
+            <div class="mb-6 relative">
+                <label for="affiliateLink" class="block mb-2 font-semibold text-blue-800">Original Affiliate Link</label>
+                <input type="text" id="affiliateLink" class="w-full p-4 bg-white bg-opacity-20 border border-white border-opacity-30 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent transition duration-300 text-blue-800 placeholder-blue-300 placeholder-opacity-60" placeholder="Enter original affiliate link">
+                <i class="fas fa-link absolute right-4 top-12 text-blue-400"></i>
+            </div>
+            <div class="mb-6 relative">
+                <label for="directLinks" class="block mb-2 font-semibold text-blue-800">Direct Product Links</label>
+                <textarea id="directLinks" class="w-full p-4 bg-white bg-opacity-20 border border-white border-opacity-30 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent transition duration-300 text-blue-800 placeholder-blue-300 placeholder-opacity-60" rows="5" placeholder="Enter direct product links, one per line"></textarea>
+                <i class="fas fa-list absolute right-4 top-12 text-blue-400"></i>
+            </div>
+            <button onclick="processLinks()" class="w-full bg-gradient-to-r from-blue-400 to-blue-600 text-white px-6 py-4 rounded-lg hover:from-blue-500 hover:to-blue-700 transition duration-300 font-bold transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400">
+                <i class="fas fa-magic mr-2"></i> Process Links
+            </button>
+        </div>
+        <div id="results" class="px-8 pb-8"></div>
+        
+        <!-- New Features Section -->
+        <div class="px-8 pb-8">
+            <h3 class="text-2xl font-bold mb-4 text-blue-800">Additional Features</h3>
+            <div class="grid grid-cols-1 gap-4">
+                <button onclick="showTutorial()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition duration-300">
+                    <i class="fas fa-question-circle mr-2"></i> Show Tutorial
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allProcessedLinks = [];
+
+        function getNetworkName(link) {
+            if (link.includes("brandreward")) return "brandreward";
+            if (link.includes("linkbux")) return "linkbux";
+            if (link.includes("tradedoubler")) return "tradedoubler";
+            if (link.includes("cotrck")) return "cotrck";
+            if (link.includes("awin")) return "Awin";
+            if (link.includes("tradetracker")) return "TradeTracker";
+            if (link.includes("ikhnaie")) return "Webgains";
+            if (link.includes("webgains")) return "Webgains";
+            return "Not found";
+        }
+
+        function processLink(affiliateLink, directLink, networkName) {
+            if (!directLink) return "No DeepLink";
+
+            switch (networkName) {
+                case "brandreward":
+                    return affiliateLink.substring(0, affiliateLink.indexOf("url=")) + "id={clickid}&url=" + directLink;
+                case "linkbux":
+                case "cotrck":
+                    {
+                        const lastAmpIndex = affiliateLink.lastIndexOf("&");
+                        return affiliateLink.substring(0, lastAmpIndex) + "&url=" + directLink + affiliateLink.substring(lastAmpIndex);
+                    }
+                case "tradedoubler":
+                    {
+                        const lastAmpIndex = affiliateLink.lastIndexOf("&");
+                        return affiliateLink.substring(0, lastAmpIndex) + affiliateLink.substring(lastAmpIndex) + "&url=" + directLink;
+                    }
+                case "Awin":
+                    return affiliateLink + "&ued=" + directLink;
+                    
+                case "TradeTracker":
+                    {
+                        const baseUrl = new URL(directLink);
+                        const path = baseUrl.pathname + baseUrl.search;
+                        
+                        let modifiedAffiliateLink = affiliateLink.replace(/(&r=)\{clickid\}/, '$1');
+                        modifiedAffiliateLink = modifiedAffiliateLink.replace(/&r=\{clickid\}$/, '');
+                        
+                        if (!modifiedAffiliateLink.endsWith('&u=')) {
+                            modifiedAffiliateLink += '&u=';
+                        }
+                        
+                        return modifiedAffiliateLink + encodeURIComponent(path) + "&r={clickid}";
+                    }
+
+                case "Webgains":
+                    return affiliateLink + "&wgtarget=" + directLink;
+
+                default:
+                    return "No match found";
+            }
+        }
+
+        function copyToClipboard(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showCopiedMessage();
+                }, (err) => {
+                    console.error('Could not copy text: ', err);
+                });
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        showCopiedMessage();
+                    } else {
+                        console.error('Fallback: Copying text command was unsuccessful');
+                    }
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                }
+
+                document.body.removeChild(textArea);
+            }
+        }
+
+        function showCopiedMessage() {
+            Swal.fire({
+                icon: 'success',
+                title: 'Copied!',
+                text: 'Link(s) copied to clipboard',
+                showConfirmButton: false,
+                timer: 1500,
+                customClass: {
+                    popup: 'animate__animated animate__fadeInDown'
+                }
+            });
+        }
+
+        function copyLink(index) {
+            copyToClipboard(allProcessedLinks[index]);
+        }
+
+        function copyAllLinks() {
+            copyToClipboard(allProcessedLinks.join('\n'));
+        }
+
+        function processLinks() {
+            const affiliateLink = document.getElementById('affiliateLink').value.trim();
+            const directLinks = document.getElementById('directLinks').value
+                .split('\n')
+                .filter(link => link.trim() !== '')
+                .map(link => link.trim());
+            const networkName = getNetworkName(affiliateLink);
+
+            let resultsHTML = `
+                <div class="bg-white bg-opacity-20 rounded-xl p-6 mt-8">
+                    <h2 class="text-3xl font-bold mb-4 text-blue-800">Results</h2>
+                    <p class="mb-4 text-blue-800">Network Name: <span class="font-semibold text-blue-600">${networkName}</span></p>
+                    <div class="space-y-4" id="linkResults">
+            `;
+
+            allProcessedLinks = [];
+
+            directLinks.forEach((directLink, index) => {
+                const processedLink = processLink(affiliateLink, directLink, networkName);
+                allProcessedLinks.push(processedLink);
+
+                resultsHTML += `
+                    <div class="bg-white bg-opacity-10 rounded-lg p-4 hover:bg-opacity-20 transition duration-300 opacity-0" id="linkResult${index}">
+                        <p class="font-semibold text-blue-800">Link ${index + 1}</p>
+                        <p class="text-sm text-blue-700 text-opacity-80 mb-2">Original: ${directLink}</p>
+                        <div class="flex items-center">
+                            <p class="text-sm break-all flex-grow text-blue-800 text-opacity-90">${processedLink}</p>
+                            <button onclick="copyLink(${index})" class="ml-2 bg-blue-400 text-white px-3 py-1 rounded hover:bg-blue-500 transition duration-300 text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400">
+                                <i class="fas fa-copy mr-1"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            resultsHTML += `
+                    </div>
+                    <div class="mt-6">
+                        <button onclick="copyAllLinks()" class="w-full bg-gradient-to-r from-blue-400 to-blue-600 text-white px-6 py-4 rounded-lg hover:from-blue-500 hover:to-blue-700 transition duration-300 font-bold transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400">
+                            <i class="fas fa-copy mr-2"></i> Copy All Processed Links
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('results').innerHTML = resultsHTML;
+
+            // Animate results
+            gsap.to("#linkResults > div", {
+                opacity: 1,
+                y: 0,
+                stagger: 0.1,
+                ease: "power2.out",
+                duration: 0.2
+            });
+        }
+
+        function showTutorial() {
+            Swal.fire({
+                title: 'How to Use',
+                html: `
+                    <ol class="text-left">
+                        <li>1. Enter your affiliate link in the first input field.</li>
+                        <li>2. Enter direct product links in the textarea, one per line.</li>
+                        <li>3. Click "Process Links" to generate affiliate links.</li>
+                        <li>4. Use the "Copy" buttons to copy individual links or all links at once.</li>
+                    </ol>
+                `,
+                icon: 'info',
+                confirmButtonText: 'Got it!'
+            });
+        }
+
+        // Initial animation
+        gsap.to("#mainContainer", {
+            opacity: 1,
+            y: 0,
+            duration: 1,
+            ease: "power3.out"
+        });
+    </script>
+</body>
+</html>
